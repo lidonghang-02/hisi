@@ -1,0 +1,19 @@
+static_library("oled") {
+  sources = [
+    "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals/src/hal_iot_gpio_ex.c",
+    "src/oled.c",
+    # "test.c",
+  ]
+  include_dirs = [
+    "./",
+    "//utils/native/lite/include",
+    "//kernel/liteos_m/kal/cmsis",
+    "//base/iot_hardware/peripheral/interfaces/kits",
+    "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals/include",
+    "//device/hisilicon/hispark_pegasus/sdk_liteos/include",
+    "//vendor/hisi/hi3861/hi3861/third_party/lwip_sack/include/",
+    "//foundation/communication/interfaces/kits/wifi_lite/wifiservice",
+    "//base/iot_hardware/interfaces/kits/wifiiot_lite",
+    "//foundation/communication/wifi/interfaces/innerkits/native_c"
+  ]
+}

@@ -1,0 +1,43 @@
+static_library("IntelligentCatLitterCleaner") {
+    sources = [
+        "LitterCleaner.c",
+        "./EasyHi/EasyIsr.c",
+        "./EasyHi/EasyTimer.c",
+        "./SteeringEngine/SteeringEngine.c",
+        "./StepMotor/StepMotor.c",
+        "./Weight_Sensor/Weight_Sensor.c",
+        "./wifi_config/ap_mode.c",
+        "./wifi_config/sta_mode.c",
+        "./HCSR04/HCSR04.c",
+        
+    ]
+
+    include_dirs = [
+        "//utils/native/lite/include",
+        "//third_party/cJSON/",
+        "//foundation/communication/wifi_lite/interfaces/wifiservice",
+
+        "//kernel/liteos_m/kal/cmsis",
+        "//kernel/liteos_m/kal",
+        "//base/iot_hardware/peripheral/interfaces/kits",
+        "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals/include",
+        "//kernel/liteos_m/kal",
+
+        "./",
+        "./EasyHi",
+        "./SteeringEngine",
+        "./StepMotor",
+        "./Weight_Sensor",
+        "./wifi_config",
+        "./EasyWifi",
+
+        "./iot_cloud_oc/include",
+        "./oled/include",
+  ]
+  deps = [
+        "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals:bearpi_iot_hardware_hals",
+        "./EasyWifi:easy_wifi",
+        "./iot_cloud_oc:cloud_oc",
+        "./oled:oled",
+  ]
+}
