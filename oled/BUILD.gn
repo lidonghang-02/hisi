@@ -2,7 +2,7 @@ static_library("oled") {
   sources = [
     "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals/src/hal_iot_gpio_ex.c",
     "src/oled.c",
-    # "test.c",
+    "test.c",
   ]
   include_dirs = [
     "./",
@@ -14,6 +14,8 @@ static_library("oled") {
     "//vendor/hisi/hi3861/hi3861/third_party/lwip_sack/include/",
     "//foundation/communication/interfaces/kits/wifi_lite/wifiservice",
     "//base/iot_hardware/interfaces/kits/wifiiot_lite",
-    "//foundation/communication/wifi/interfaces/innerkits/native_c"
+    "//foundation/communication/wifi/interfaces/innerkits/native_c",
+    "./include"
+
   ]
 }

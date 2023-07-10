@@ -16,6 +16,7 @@
 #include "StepMotor/StepMotor.h"
 #include "SteeringEngine/SteeringEngine.h"
 #include "HCSR04.h"
+#include "oled.h"
 #include "iot_cloud.h"
 
 #define KEYLONGTIME 150
@@ -236,6 +237,7 @@ static void LitterCleaner_Sensor(void)
 {
     WS_Init();
     Hcsr04_Init();
+    OlED_Main();
     app_msg_t *app_msg;
     float distance = 0;
     float pressure = 0;
@@ -253,7 +255,39 @@ static void LitterCleaner_Sensor(void)
                 free(app_msg);
             }
         }
-        osDelay(10);
+
+        // 界面显示数据
+
+        // 判断状态（停机/运行中）
+        if (1)
+        {
+
+            OLED_ShowChinese(42, 0, 2, 12, 1);
+            OLED_ShowChinese(56, 0, 3, 12, 1);
+            OLED_ShowChinese(70, 0, 22, 12, 1);
+        }
+        else
+        {
+            OLED_ShowChinese(42, 0, 4, 12, 1);
+            OLED_ShowChinese(56, 0, 5, 12, 1);
+            OLED_ShowChinese(70, 0, 6, 12, 1);
+        }
+
+        // 已铲猫屎
+        int kg = 10;
+        uint8_t str[64];
+        int cnt = 10; // 次数
+
+        sprintf((char *)str, "%dkg", kg);
+        OLED_ShowString(70, 14, str, 12, 1);
+
+        // // 剩余猫砂
+        sprintf((char *)str, "%dkg", kg);
+        OLED_ShowString(70, 28, str, 12, 1);
+
+        // 今日铲屎次数
+        sprintf((char *)str, "%d", cnt);
+        OLED_ShowString(98, 42, str, 12, 1);
     }
 }
 
