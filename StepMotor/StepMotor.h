@@ -32,6 +32,13 @@
 #define StepMotorPinC_OFF IoTGpioSetOutputVal(StepMotor_PinC, IOT_GPIO_VALUE1)
 #define StepMotorPinD_OFF IoTGpioSetOutputVal(StepMotor_PinD, IOT_GPIO_VALUE1)
 
+typedef enum
+{
+    FOR = 0,
+    REW = 1,
+    OFF
+} MotorStatus;
+
 // 关闭步进电机的输入信号
 #define StepMotorPin_OFF do{    \
 IoTGpioSetOutputVal(StepMotor_PinA, IOT_GPIO_VALUE1);   \
@@ -44,5 +51,6 @@ void StepMotor_Init(void);
 void StepMotor_SetStatus(uint8_t motor_status);
 void StepMotor_InitPin(uint8_t StepMotor_Pin, uint8_t StepMotor_PinFunc);
 void StepMotor_Test(void);
+void StepMotor_Run(MotorStatus status);
 
 #endif

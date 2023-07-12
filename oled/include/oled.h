@@ -21,8 +21,6 @@
 #define OLED_CMD 0  // 写命令
 #define OLED_DATA 1 // 写数据
 
-void OLED_Main(void);
-
 void OLED_ClearPoint(uint8_t x, uint8_t y);
 void OLED_ColorTurn(uint8_t i);
 void OLED_DisplayTurn(uint8_t i);

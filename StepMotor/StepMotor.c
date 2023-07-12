@@ -4,9 +4,7 @@
 #include "cmsis_os2.h"
 #include <stdlib.h>
 
-#include "iot_cloud_oc/include/Sensor.h"
-
-// #define Speed_Max 
+// #define Speed_Max
 
 osTimerId_t Timer_ID = 0;
 int8_t direction = 0;
@@ -32,13 +30,17 @@ void StepMotor_CallbackFunc(void)
     StepMotor_SetStatus(count);
 
     if (direction == Positive)
+    {
         if (++count >= 8)
             count = 0;
-        else if (direction == Negative)
-            if (--count < 0)
-                count = 7;
+    }
+    else if (direction == Negative)
+    {
+        if (--count < 0)
+            count = 7;
+    }
 
-    printf("Get into the IT, count = %d\n", count);
+    // printf("Get into the IT, count = %d\n", count);
     EasyTimer_ClearIsrFlag(&StepMotor_Timer);
 }
 
@@ -153,9 +155,21 @@ void StepMotor_Run(MotorStatus status)
     switch (status)
     {
     case FOR:
-        StepMotor_SetSpeed(800)
+        StepMotor_SetSpeed(40000, Positive);
+        EasyTimer_Start(&StepMotor_Timer);
+        EasyIsr_Start(&StepMotor_Isr);
+        printf("Motor Run Positive\n");
         break;
-    
+    case REW:
+        StepMotor_SetSpeed(40000, Negative);
+        EasyTimer_Start(&StepMotor_Timer);
+        EasyIsr_Start(&StepMotor_Isr);
+        printf("Motor Run Negative\n");
+        break;
+    case OFF:
+        EasyIsr_Stop(&StepMotor_Isr);
+        EasyTimer_Stop(&StepMotor_Timer);
+        break;
     default:
         break;
     }
