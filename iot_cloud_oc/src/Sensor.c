@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "Sensor.h"
-#include "HCSR04.h"
+
 // 电机状态
 void MotorStatusSet(MotorStatus status)
 {

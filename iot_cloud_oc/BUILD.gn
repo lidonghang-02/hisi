@@ -19,10 +19,10 @@ copy("config") {
 
 static_library("cloud_oc") {
   sources = [
-    "src/Sensor.c",
-    "src/wifi_connect.c",
-    "src/HCSR04.c",
-    # "src/iot_cloud.c",
+    # "src/Sensor.c",
+    # "src/wifi_connect.c",
+    # "../HCSR04/src/HCSR04.c",
+    "src/iot_cloud.c",
   ]
 
   include_dirs = [
@@ -33,7 +33,7 @@ static_library("cloud_oc") {
     "//vendor/bearpi/bearpi_hm_nano/common/third_party/iot_link/oc_mqtt/oc_mqtt_al",
     "//vendor/bearpi/bearpi_hm_nano/common/third_party/iot_link/oc_mqtt/oc_mqtt_profile_v5",
     "//vendor/bearpi/bearpi_hm_nano/common/third_party/iot_link/inc",
-    "include",
+    "./include",
   ]
 
   deps = [ ":config" ]

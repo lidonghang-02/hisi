@@ -4,7 +4,7 @@
 #include "cmsis_os2.h"
 #include "ohos_init.h"
 #include "iot_gpio.h"
-#include "iot_gpio_ex.h"
+// #include "iot_gpio_ex.h"
 #include "hi_wifi_api.h"
 #include "hi_nv.h"
 
@@ -158,7 +158,7 @@ static void LitterCleaner_KeyInit(void)
     if (KeyTimer_ID == NULL)
         printf("KeyTimer Init Fail!\n");
 
-    IoTGpioRegisterIsrFunc(7, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, LitterCleaner_KeyCallback, NULL);
+    IoTGpioRegisterIsrFunc(7, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LitterCleaner_KeyCallback, NULL);
 
     // 限位开关初始化
 }

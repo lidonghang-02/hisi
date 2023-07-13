@@ -18,7 +18,10 @@
 #define SENSOR_TASK_PRIO 25
 #define TASK_DELAY 3
 
-osMessageQueueId_t mid_MsgQueue; // message queue id
+#include "cJSON.h"
+#include "oc_mqtt_profile.h"
+#include "cmsis_os2.h"
+
 typedef enum
 {
     en_msg_cmd = 0,

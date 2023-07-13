@@ -4,8 +4,8 @@
 #include "cmsis_os2.h"
 #include "iot_gpio_ex.h"
 #include "iot_gpio.h"
-#include "oled.h"
-#include "font.h"
+#include "../include/oled.h"
+#include "../include/font.h"
 
 uint8_t OLED_GRAM[144][8];
 

@@ -2,16 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "cmsis_os2.h"
 #include "ohos_init.h"
 
 #include <dtls_al.h>
-#include <mqtt_al.h>
 #include <oc_mqtt_al.h>
-#include <oc_mqtt_profile.h>
+#include <mqtt_al.h>
 #include "Sensor.h"
 #include "wifi_connect.h"
 #include "iot_cloud.h"
+
 
 // 拼装数据上传
 static void deal_report_msg(report_t *report)

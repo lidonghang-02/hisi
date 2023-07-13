@@ -1,6 +1,6 @@
 static_library("oled") {
   sources = [
-    "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals/src/hal_iot_gpio_ex.c",
+    # "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals/src/hal_iot_gpio_ex.c",
     "src/oled.c",
     # "test.c",
   ]
@@ -16,4 +16,6 @@ static_library("oled") {
     "//base/iot_hardware/interfaces/kits/wifiiot_lite",
     "//foundation/communication/wifi/interfaces/innerkits/native_c"
   ]
+
+  deps = [ "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals:bearpi_iot_hardware_hals" ]
 }
