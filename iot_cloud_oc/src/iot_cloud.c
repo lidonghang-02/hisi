@@ -37,7 +37,7 @@ static void deal_report_msg(report_t *report)
     Cleaner.key = "Cleaner";
     Cleaner.value = &report->Cleaner;
     Cleaner.type = EN_OC_MQTT_PROFILE_VALUE_INT;
-    Cleaner.nxt = &motor;
+    Cleaner.nxt = &CatLitters;
 
     CatLitters.key = "CatLitters";
     CatLitters.value = &report->CatLitters;
@@ -169,7 +169,7 @@ void CloudInit(void)
     app_msg_t *app_msg;
     uint32_t ret;
 
-    WifiConnect(CONFIG_WIFI_SSID, CONFIG_WIFI_PWD);
+    // WifiConnect(CONFIG_WIFI_SSID, CONFIG_WIFI_PWD);
     dtls_al_init();
     mqtt_al_init();
     oc_mqtt_init();
