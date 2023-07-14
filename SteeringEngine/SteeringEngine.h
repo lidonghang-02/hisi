@@ -11,8 +11,8 @@
  * @brief the IO of Steering Engine,including its function
  * 
  */
-#define SteeringEngine_IO 1
-#define SteeringEngine_IOFunc IOT_GPIO_FUNC_GPIO_1_GPIO
+#define SteeringEngine_IO 2
+#define SteeringEngine_IOFunc IOT_GPIO_FUNC_GPIO_2_GPIO
 
 /**
  * @brief the io function of Steering Engine

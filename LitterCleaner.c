@@ -3,6 +3,7 @@
 
 #include "cmsis_os2.h"
 #include "ohos_init.h"
+#include "hi_watchdog.h"
 #include "iot_gpio.h"
 // #include "iot_gpio_ex.h"
 #include "hi_wifi_api.h"
@@ -56,28 +57,20 @@ struct LitterCleaner_Key
 osTimerId_t KeyTimer_ID = 0;
 
 // 限位开关定时器
-osTimerId_t StepMotor_KeyID = 0;
+osTimerId_t StepMotor_KeyID = 0, LimitedKey_ID = 0;
 // 防夹猫标志位
 uint8_t Protec_flag = 0;
 // 电机运转标识
-int StepMotor_Status = 0;
+MotorStatus StepMotor_Status = OFF;
+// 铲屎信号
+char Operation_Sign = 0;
 
-float distance = 0;              // 距离
-float pressure = 0;              // 变化重量
-float pressure_litter = 0;       // 猫砂重量
+float distance = 0;        // 距离
+float pressure = 0;        // 变化重量
+float pressure_litter = 0; // 猫砂重量
+float pressure_shift = 0;
 unsigned long pressure_init = 0; // 初始化重量（猫砂重量的过渡变量）
 
-float distance = 0;              // 距离
-float pressure = 0;              // 变化重量
-float pressure_litter = 0;       // 猫砂重量
-unsigned long pressure_init = 0; // 初始化重量（猫砂重量的过渡变量）
-
-void LitterCleaner_KeyCallback(void);
-void LitterCleaner_KeyRegconize(void);
-static void LitterCleaner_TaskEntry(void);
-static void LitterCleaner_Key(void);
-static void LitterCleaner_KeyInit(void);
-static char LitterCleaner_WifiInit(void);
 
 /**
  * @brief 按键外部中断回调函数
@@ -139,12 +132,22 @@ void LitterCleaner_KeyRegconize(void)
     // printf("Get into the key timer\n");
 }
 
-/**
- * @brief 限位开关处理
- *
- */
-static void StepMotor_LimitedKey(void)
+// 终点限位开关
+void LimitedKey_1(void)
 {
+    printf("Key1 Down\n");
+    StepMotor_Status = REW;
+    StepMotor_Run(REW);
+    IoTGpioUnregisterIsrFunc(6);
+}
+
+// 起点限位开关
+void LimitedKey_2(void)
+{
+    printf("Key2 Down\n");
+    StepMotor_Status = OFF;
+    Operation_Sign = 0;
+    IoTGpioUnregisterIsrFunc(5);
 }
 
 /**
@@ -167,6 +170,18 @@ static void LitterCleaner_KeyInit(void)
     IoTGpioRegisterIsrFunc(7, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LitterCleaner_KeyCallback, NULL);
 
     // 限位开关初始化
+    IoTGpioInit(6);
+    IoTGpioSetFunc(6, IOT_GPIO_FUNC_GPIO_6_GPIO);
+    IoTGpioSetDir(6, IOT_GPIO_DIR_IN);
+    IoTGpioSetPull(6, IOT_GPIO_PULL_UP);
+    IoTGpioSetOutputVal(6, IOT_GPIO_VALUE1);
+    // IoTGpioRegisterIsrFunc(6, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_1, NULL);
+    IoTGpioInit(5);
+    IoTGpioSetFunc(5, IOT_GPIO_FUNC_GPIO_5_GPIO);
+    IoTGpioSetDir(5, IOT_GPIO_DIR_IN);
+    IoTGpioSetPull(5, IOT_GPIO_PULL_UP);
+    IoTGpioSetOutputVal(5, IOT_GPIO_VALUE1);
+    // IoTGpioRegisterIsrFunc(5, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_2, NULL);
 }
 
 /**
@@ -225,6 +240,7 @@ static void LitterCleaner_Key(void)
     {
         if (Key.key_status == Key_Down)
         {
+            // printf("get into key task \n");
             // 松手检测
             for (i = 1; i < Key_MaxClick; i++)
             {
@@ -270,6 +286,8 @@ static void LitterCleaner_Key(void)
                 printf("Key Down\n");
             }
         }
+
+        // hi_watchdog_feed();
         osDelay(10);
     }
 }
@@ -282,7 +300,9 @@ static void LitterCleaner_Protector(void)
         {
             Protec_flag = 1;
             StepMotor_Run(OFF);
+            Operation_Sign = 0;
         }
+        hi_watchdog_feed();
         osDelay(10);
     }
 }
@@ -312,8 +332,8 @@ static void LitterCleaner_Sensor(void)
         {
             app_msg->msg_type = en_msg_report;
             app_msg->msg.report.LeftoverCatLitter = (float)pressure_litter; // 剩余猫砂
-            app_msg->msg.report.Cleaner = (int)StepMotor_Status;            // 铲屎信号（1铲   0不铲）
-            app_msg->msg.report.LeftoverCatLitter = (float)Shift;           // 铲掉的排泄物
+            app_msg->msg.report.Cleaner = (int)Operation_Sign;              // 铲屎信号（1铲   0不铲）
+            app_msg->msg.report.LeftoverCatLitter = (float)pressure_shift;  // 铲掉的排泄物
             if (osMessageQueuePut(g_app_cb.app_msg, &app_msg, 0U, CONFIG_QUEUE_TIMEOUT != 0))
             {
                 free(app_msg);
@@ -339,7 +359,7 @@ static void LitterCleaner_Sensor(void)
         OLED_ShowString(70, 14, str, 12, 1);
 
         // 剩余猫砂
-        sprintf((char *)str, "%dkg", pressure_litter);
+        sprintf((char *)str, "%dkg", Litter);
         OLED_ShowString(70, 28, str, 12, 1);
 
         // 今日铲屎次数
@@ -351,21 +371,30 @@ static void LitterCleaner_Sensor(void)
         {
             if (pressure > LitterPressure && distance > Prot_Distance)
             {
-                // 初始化限位开关
-                StepMotor_KeyID = osTimerNew(StepMotor_LimitedKey, osTimerPeriodic, NULL, NULL);
-                osTimerStart(StepMotor_KeyID, 1);
-
                 // 电机正转
                 StepMotor_Run(FOR);
+                StepMotor_Status = FOR;
+                Operation_Sign = 1;
+                osDelay(100);
+                IoTGpioRegisterIsrFunc(5, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_2, NULL);
+                IoTGpioRegisterIsrFunc(6, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_1, NULL);
 
                 // 记录数据
-                Shift += pressure;
+                pressure_shift += pressure;
                 pressure_litter -= pressure;
                 Litter = (int)pressure_litter;
+                Shift = (int)pressure_shift;
                 cnt++;
             }
         }
+        else if (distance > Prot_Distance)
+        {
+            Operation_Sign = 1;
+            Protec_flag = 0;
+            StepMotor_Run(StepMotor_Status);
+        }
 
+        hi_watchdog_feed();
         osDelay(10);
     }
 }
@@ -393,6 +422,8 @@ static void LitterCleaner_Connector(void)
             }
             free(app_msg);
         }
+
+        hi_watchdog_feed();
         osDelay(100);
     }
 }
@@ -492,4 +523,5 @@ static void LitterCleaner_TaskEntry(void)
     else
         printf("[LitterCleaner - Init] Succeed to creat Task!\n");
 }
+
 SYS_RUN(LitterCleaner_TaskEntry);
