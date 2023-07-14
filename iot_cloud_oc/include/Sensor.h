@@ -1,19 +1,12 @@
-#ifndef __SENSOR_H__
-#define __SENSOR_H__
-
+#ifndef __E53_IA1_H__
+#define __E53_IA1_H__
+#include "iot_cloud.h"
 typedef enum
 {
-    FOR = 0,
-    REW = 1,
+    CLEAN = 1,
     OFF
-} MotorStatus;
+} Clean;
 
-typedef struct
-{
-    float Pressure;
-    float Distance;
-} SensorData;
-
-void MotorStatusSet(MotorStatus status);
+void Begin_Clean(Clean status);
 
 #endif

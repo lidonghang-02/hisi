@@ -38,10 +38,10 @@ typedef struct
 
 typedef struct
 {
-    int pressure;
-    int distance;
-
-} report_t;
+    float LeftoverCatLitter; // 剩余猫砂
+    int Cleaner;             // 铲屎信号
+    float CatLitters;        // 铲掉的排泄物
+} SensorData, report_t;
 
 typedef struct
 {

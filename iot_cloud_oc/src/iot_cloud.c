@@ -11,14 +11,13 @@
 #include "wifi_connect.h"
 #include "iot_cloud.h"
 
-
 // 拼装数据上传
 static void deal_report_msg(report_t *report)
 {
     oc_mqtt_profile_service_t service;
-    oc_mqtt_profile_kv_t pressure;
-    oc_mqtt_profile_kv_t distance;
-    oc_mqtt_profile_kv_t motor;
+    oc_mqtt_profile_kv_t LeftoverCatLitter;
+    oc_mqtt_profile_kv_t CatLitters;
+    oc_mqtt_profile_kv_t Cleaner;
 
     if (g_app_cb.connected != 1)
     {
@@ -27,34 +26,23 @@ static void deal_report_msg(report_t *report)
 
     service.event_time = NULL;
     service.service_id = "cat";
-    service.service_property = &pressure;
+    service.service_property = &LeftoverCatLitter;
     service.nxt = NULL;
 
-    pressure.key = "Pressure";
-    pressure.value = &report->pressure;
-    pressure.type = EN_OC_MQTT_PROFILE_VALUE_INT;
-    pressure.nxt = &distance;
+    LeftoverCatLitter.key = "LeftoverCatLitter";
+    LeftoverCatLitter.value = &report->LeftoverCatLitter;
+    LeftoverCatLitter.type = EN_OC_MQTT_PROFILE_VALUE_FLOAT;
+    LeftoverCatLitter.nxt = &Cleaner;
 
-    distance.key = "Distance";
-    distance.value = &report->distance;
-    distance.type = EN_OC_MQTT_PROFILE_VALUE_INT;
-    distance.nxt = &motor;
+    Cleaner.key = "Cleaner";
+    Cleaner.value = &report->Cleaner;
+    Cleaner.type = EN_OC_MQTT_PROFILE_VALUE_INT;
+    Cleaner.nxt = &CatLitters;
 
-    motor.key = "MotorStatus";
-    if (g_app_cb.motor == FOR)
-    {
-        motor.value = "FOR";
-    }
-    else if (g_app_cb.motor == OFF)
-    {
-        motor.value = "OFF";
-    }
-    else
-    {
-        motor.value = "REW";
-    }
-    motor.type = EN_OC_MQTT_PROFILE_VALUE_STRING;
-    motor.nxt = NULL;
+    CatLitters.key = "CatLitters";
+    CatLitters.value = &report->CatLitters;
+    CatLitters.type = EN_OC_MQTT_PROFILE_VALUE_FLOAT;
+    CatLitters.nxt = NULL;
     // 上传数据
     oc_mqtt_profile_propertyreport(NULL, &service);
     return;
@@ -127,23 +115,17 @@ static void deal_motor_cmd(cmd_t *cmd, cJSON *obj_root)
     {
         cJSON_Delete(obj_root);
     }
-    obj_para = cJSON_GetObjectItem(obj_paras, "Motor");
+    obj_para = cJSON_GetObjectItem(obj_paras, "BeginClean");
     if (obj_para == NULL)
     {
         cJSON_Delete(obj_root);
     }
     ///< operate the Motor here
-    if (strcmp(cJSON_GetStringValue(obj_para), "FOR") == 0)
+    if (strcmp(cJSON_GetStringValue(obj_para), "CLEAN") == 0)
     {
         g_app_cb.motor = 1;
-        MotorStatusSet(FOR);
-        printf("Motor FOR!\r\n");
-    }
-    else if (strcmp(cJSON_GetStringValue(obj_para), "REW") == 1)
-    {
-        g_app_cb.motor = 1;
-        MotorStatusSet(REW);
-        printf("Motor REW!\r\n");
+        MotorStatusSet(CLEAN);
+        printf("Start Clean!\r\n");
     }
     else
     {
@@ -187,7 +169,7 @@ void CloudInit(void)
     app_msg_t *app_msg;
     uint32_t ret;
 
-    WifiConnect(CONFIG_WIFI_SSID, CONFIG_WIFI_PWD);
+    // WifiConnect(CONFIG_WIFI_SSID, CONFIG_WIFI_PWD);
     dtls_al_init();
     mqtt_al_init();
     oc_mqtt_init();
@@ -219,119 +201,3 @@ void CloudInit(void)
         printf("oc_mqtt_profile_connect faild!\r\n");
     }
 }
-// void CloudMainTaskEntry(void)
-// {
-//     app_msg_t *app_msg;
-//     uint32_t ret;
-
-//     WifiConnect(CONFIG_WIFI_SSID, CONFIG_WIFI_PWD);
-//     dtls_al_init();
-//     mqtt_al_init();
-//     oc_mqtt_init();
-
-//     g_app_cb.app_msg = osMessageQueueNew(MSGQUEUE_COUNT, MSGQUEUE_SIZE, NULL);
-//     if (g_app_cb.app_msg == NULL)
-//     {
-//         printf("Create receive msg queue failed");
-//     }
-//     oc_mqtt_profile_connect_t connect_para;
-//     (void)memset_s(&connect_para, sizeof(connect_para), 0, sizeof(connect_para));
-
-//     connect_para.boostrap = 0;
-//     connect_para.device_id = CONFIG_APP_DEVICEID;
-//     connect_para.device_passwd = CONFIG_APP_DEVICEPWD;
-//     connect_para.server_addr = CONFIG_APP_SERVERIP;
-//     connect_para.server_port = CONFIG_APP_SERVERPORT;
-//     connect_para.life_time = CONFIG_APP_LIFETIME;
-//     connect_para.rcvfunc = msg_rcv_callback;
-//     connect_para.security.type = EN_DTLS_AL_SECURITY_TYPE_NONE;
-//     ret = oc_mqtt_profile_connect(&connect_para);
-//     if ((ret == (int)en_oc_mqtt_err_ok))
-//     {
-//         g_app_cb.connected = 1;
-//         printf("oc_mqtt_profile_connect succed!\r\n");
-//     }
-//     else
-//     {
-//         printf("oc_mqtt_profile_connect faild!\r\n");
-//     }
-
-//     while (1)
-//     {
-//         app_msg = NULL;
-//         (void)osMessageQueueGet(g_app_cb.app_msg, (void **)&app_msg, NULL, 0xFFFFFFFF);
-//         if (app_msg != NULL)
-//         {
-//             switch (app_msg->msg_type)
-//             {
-//             case en_msg_cmd:
-//                 deal_cmd_msg(&app_msg->msg.cmd);
-//                 break;
-//             case en_msg_report:
-//                 deal_report_msg(&app_msg->msg.report);
-//                 break;
-//             default:
-//                 break;
-//             }
-//             free(app_msg);
-//         }
-//     }
-// }
-
-// void SensorTaskEntry(void)
-// {
-//     app_msg_t *app_msg;
-//     int ret;
-//     SensorData data;
-//     SensorIoInit();
-//     while (1)
-//     {
-//         ret = SensorReadData(&data);
-
-//         if (ret != 0)
-//         {
-//             printf("Sensor Read Data failed!\r\n");
-//             return;
-//         }
-//         app_msg = malloc(sizeof(app_msg_t));
-//         printf("SENSOR:Pressure:%.2f Distance:%.2f\r\n", data.Pressure, data.Distance);
-//         if (app_msg != NULL)
-//         {
-//             app_msg->msg_type = en_msg_report;
-//             app_msg->msg.report.pressure = (int)data.Pressure;
-//             app_msg->msg.report.distance = (int)data.Distance;
-//             if (osMessageQueuePut(g_app_cb.app_msg, &app_msg, 0U, CONFIG_QUEUE_TIMEOUT != 0))
-//             {
-//                 free(app_msg);
-//             }
-//         }
-//         sleep(TASK_DELAY);
-//     }
-// }
-
-// static void IotMainTaskEntry(void)
-// {
-//     osThreadAttr_t attr;
-
-//     attr.name = "CloudMainTaskEntry";
-//     attr.attr_bits = 0U;
-//     attr.cb_mem = NULL;
-//     attr.cb_size = 0U;
-//     attr.stack_mem = NULL;
-//     attr.stack_size = CLOUD_TASK_STACK_SIZE;
-//     attr.priority = CLOUD_TASK_PRIO;
-
-//     if (osThreadNew((osThreadFunc_t)CloudMainTaskEntry, NULL, &attr) == NULL)
-//     {
-//         printf("Failed to create CloudMainTaskEntry!\n");
-//     }
-//     attr.stack_size = SENSOR_TASK_STACK_SIZE;
-//     attr.priority = SENSOR_TASK_PRIO;
-//     attr.name = "SensorTaskEntry";
-//     if (osThreadNew((osThreadFunc_t)SensorTaskEntry, NULL, &attr) == NULL)
-//     {
-//         printf("Failed to create SensorTaskEntry!\n");
-//     }
-// }
-
-// APP_FEATURE_INIT(IotMainTaskEntry);

@@ -24,7 +24,7 @@ void Hcsr04_Init(void)
 
 float GetDistance(void)
 {
-    printf("HCSR04 GetDistance\r\n");
+    // printf("HCSR04 GetDistance\r\n");
     static unsigned long start_time = 0, time = 0;
     float dis = 0.0;
     unsigned int flag = 0, stop = 500;
