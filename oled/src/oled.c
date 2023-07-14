@@ -4,8 +4,8 @@
 #include "cmsis_os2.h"
 #include "iot_gpio_ex.h"
 #include "iot_gpio.h"
-#include "oled.h"
-#include "font.h"
+#include "../include/oled.h"
+#include "../include/font.h"
 
 uint8_t OLED_GRAM[144][8];
 
@@ -519,11 +519,18 @@ void OLED_Init(void)
     IoTGpioInit(SDA);
     IoTGpioSetFunc(SDA, IOT_GPIO_FUNC_GPIO_0_GPIO);
     IoTGpioSetDir(SDA, IOT_GPIO_DIR_OUT);
+    // IoTGpioSetOutputVal(SDA, IOT_GPIO_VALUE1);
     IoTGpioInit(SCL);
     IoTGpioSetFunc(SCL, IOT_GPIO_FUNC_GPIO_1_GPIO);
     IoTGpioSetDir(SCL, IOT_GPIO_DIR_OUT);
 
+    // OLED_RES_Clr();
+    // delay_ms(200);
+    // OLED_RES_Set();
+
     OLED_WR_Byte(0xAE, OLED_CMD); // 关闭OLED面板
+    // OLED_WR_Byte(0x00, OLED_CMD); // 设置列地址低位
+    // OLED_WR_Byte(0x10, OLED_CMD); // 设置列地址高位
     OLED_WR_Byte(0xD5, OLED_CMD);
     OLED_WR_Byte(0x80, OLED_CMD);
     OLED_WR_Byte(0xA8, OLED_CMD);
@@ -550,52 +557,37 @@ void OLED_Init(void)
 
     // OLED_Clear();
     OLED_WR_Byte(0xAF, OLED_CMD);
-}
 
-void OLED_Main(void)
-{
-    OLED_Init();
-    OLED_ColorTurn(0);
-    OLED_DisplayTurn(0); // 0正常显示 1 屏幕翻转显示
+    // OLED_WR_Byte(0xAE, OLED_CMD); // 关闭OLED面板
+    // OLED_WR_Byte(0x00, OLED_CMD); // 设置列地址低位
+    // OLED_WR_Byte(0x10, OLED_CMD); // 设置列地址高位
+    // OLED_WR_Byte(0x40, OLED_CMD); // 设置起始行地址，映射RAM显示开始行（0x00~0x3F）
+    // OLED_WR_Byte(0x81, OLED_CMD); // 设置对比度控制寄存器
+    // OLED_WR_Byte(0xCF, OLED_CMD); // 设置SEG输出电流亮度
+    // OLED_WR_Byte(0xA1, OLED_CMD); // 设置SEG/列映射，0xa0左右反转，0xa1正常
+    // OLED_WR_Byte(0xC8, OLED_CMD); // 设置COM/行扫描方向，0xc0上下反转，0xc8正常
+    // OLED_WR_Byte(0xA6, OLED_CMD); // 设置正常显示
+    // OLED_WR_Byte(0xA8, OLED_CMD); // 设置多路复用比率（1到64）
+    // OLED_WR_Byte(0x3f, OLED_CMD); // 1/64占空比
+    // OLED_WR_Byte(0xD3, OLED_CMD); // 设置显示偏移，移动映射RAM计数器（0x00~0x3F）
+    // OLED_WR_Byte(0x00, OLED_CMD); // 不偏移
+    // OLED_WR_Byte(0x26, OLED_CMD); // 设置显示偏移，移动映射RAM计数器（0x00~0x3F）
+    // OLED_WR_Byte(0x00, OLED_CMD);
 
-    /*
-    状(0) 态(1) 停(2) 机(3) 运(4) 行(5) 中(6)
-    已(7) 铲(8) 猫(9) 屎(10)
-    剩(11) 余(12) 猫(13) 砂(14)
-    今(15) 日(16) 铲(17) 屎(18) 次(19) 数(20)
-    :(21)  "  "(22)
-
-    */
-    OLED_Clear();
-    // 状态：
-    OLED_ShowChinese(0, 0, 0, 12, 1);
-    OLED_ShowChinese(14, 0, 1, 12, 1);
-    OLED_ShowChinese(28, 0, 21, 12, 1);
-
-        // 已铲猫屎：
-    OLED_ShowChinese(0, 14, 7, 12, 1);
-    OLED_ShowChinese(14, 14, 8, 12, 1);
-    OLED_ShowChinese(28, 14, 9, 12, 1);
-    OLED_ShowChinese(42, 14, 10, 12, 1);
-    OLED_ShowChinese(56, 14, 21, 12, 1);
-
-    // 剩余猫砂：
-    OLED_ShowChinese(0, 28, 11, 12, 1);
-    OLED_ShowChinese(14, 28, 12, 12, 1);
-    OLED_ShowChinese(28, 28, 13, 12, 1);
-    OLED_ShowChinese(42, 28, 14, 12, 1);
-    OLED_ShowChinese(56, 28, 21, 12, 1);
-
-    // 今日铲屎次数：
-    OLED_ShowChinese(0, 42, 15, 12, 1);
-    OLED_ShowChinese(14, 42, 16, 12, 1);
-    OLED_ShowChinese(28, 42, 17, 12, 1);
-    OLED_ShowChinese(42, 42, 18, 12, 1);
-    OLED_ShowChinese(56, 42, 19, 12, 1);
-    OLED_ShowChinese(70, 42, 20, 12, 1);
-    OLED_ShowChinese(84, 42, 21, 12, 1);
-    // 输出数字（次数）
-    OLED_ShowChinese(112, 42, 19, 12, 1);
-
-    OLED_Refresh();
+    // OLED_WR_Byte(0xd5, OLED_CMD); // 设置显示时钟分频比/振荡器频率
+    // OLED_WR_Byte(0x80, OLED_CMD); // 设置分频比，设置时钟为100帧/秒
+    // OLED_WR_Byte(0xD9, OLED_CMD); // 设置预充电周期
+    // OLED_WR_Byte(0xF1, OLED_CMD); // 设置预充电为15个时钟，放电为1个时钟
+    // OLED_WR_Byte(0xDA, OLED_CMD); // 设置COM引脚硬件配置
+    // OLED_WR_Byte(0x12, OLED_CMD);
+    // OLED_WR_Byte(0xDB, OLED_CMD); // 设置vcomh
+    // OLED_WR_Byte(0x40, OLED_CMD); // 设置VCOM取消选择电平
+    // OLED_WR_Byte(0x20, OLED_CMD); // 设置页地址寻址模式（0x00/0x01/0x02）
+    // OLED_WR_Byte(0x02, OLED_CMD);
+    // OLED_WR_Byte(0x8D, OLED_CMD); // 设置充电泵启用/禁用
+    // OLED_WR_Byte(0x14, OLED_CMD); // 设置（0x10）禁用
+    // OLED_WR_Byte(0xA4, OLED_CMD); // 关闭整个显示（0xa4/0xa5）
+    // OLED_WR_Byte(0xA6, OLED_CMD); // 关闭反转显示（0xa6/a7）
+    // OLED_Clear();                 // 清空屏幕
+    // OLED_WR_Byte(0xAF, OLED_CMD); // 打开OLED面板
 }

@@ -4,7 +4,7 @@
 #include "cmsis_os2.h"
 #include "ohos_init.h"
 #include "iot_gpio.h"
-// #include "iot_gpio_ex.h"
+#include "iot_gpio_ex.h"
 #include "hi_wifi_api.h"
 #include "hi_nv.h"
 
@@ -15,23 +15,12 @@
 #include "Weight_Sensor/Weight_Sensor.h"
 #include "StepMotor/StepMotor.h"
 #include "SteeringEngine/SteeringEngine.h"
-#include "HCSR04.h"
-#include "iot_cloud.h"
 
 #define KEYLONGTIME 150
 #define KEYCLICKTIME 10
 #define Key_MaxClick 3
 
 #define WIFI_NVID 0x0B
-
-// 保护距离
-#define Prot_Distance 10
-
-// 重复测量次数
-#define ReWeighTimes 20
-
-// 铲屎变化重量阈值
-#define LitterPressure 100
 
 typedef enum
 {
@@ -54,16 +43,8 @@ struct LitterCleaner_Key
 
 // 按键状态机的软件定时器
 osTimerId_t KeyTimer_ID = 0;
-
-// 限位开关定时器
-osTimerId_t StepMotor_KeyID = 0;
 // 防夹猫标志位
 uint8_t Protec_flag = 0;
-
-float distance = 0;              // 距离
-float pressure = 0;              // 变化重量
-float pressure_litter = 0;       // 猫砂重量
-unsigned long pressure_init = 0; // 初始化重量（猫砂重量的过渡变量）
 
 void LitterCleaner_KeyCallback(void);
 void LitterCleaner_KeyRegconize(void);
@@ -133,20 +114,11 @@ void LitterCleaner_KeyRegconize(void)
 }
 
 /**
- * @brief 限位开关处理
- *
- */
-static void StepMotor_LimitedKey(void)
-{
-}
-
-/**
  * @brief 按键初始化，采用外部中断方式
  *
  */
 static void LitterCleaner_KeyInit(void)
 {
-    // 按键初始化
     IoTGpioInit(7);
     IoTGpioSetFunc(7, IOT_GPIO_FUNC_GPIO_7_GPIO);
     IoTGpioSetDir(7, IOT_GPIO_DIR_IN);
@@ -157,9 +129,7 @@ static void LitterCleaner_KeyInit(void)
     if (KeyTimer_ID == NULL)
         printf("KeyTimer Init Fail!\n");
 
-    IoTGpioRegisterIsrFunc(7, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LitterCleaner_KeyCallback, NULL);
-
-    // 限位开关初始化
+    IoTGpioRegisterIsrFunc(7, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, LitterCleaner_KeyCallback, NULL);
 }
 
 /**
@@ -235,26 +205,18 @@ static void LitterCleaner_Key(void)
             else if (i == 3) // 三击
             {
                 printf("Key Click 3\n");
-                if (!Protec_flag)
-                {
-                    SteeringEngine_SetAngle(90);
-                    osDelay(500);
-                    SteeringEngine_SetAngle(0);
-                }
+                SteeringEngine_SetAngle(90);
+                osDelay(500);
+                SteeringEngine_SetAngle(0);
             }
             else if (i == 2) // 双击
             {
                 printf("Key Double\n");
-                for (int i = 0; i < ReWeighTimes; i++)
-                {
-                    pressure_init += WS_Read();
-                    osDelay(10);
-                }
-                pressure_litter = (float)pressure_init / 4294.967296f / ReWeighTimes * 100;
             }
             else // 单击
             {
                 printf("Key Down\n");
+                StepMotor_Run(REW);
             }
         }
         osDelay(10);
@@ -265,123 +227,24 @@ static void LitterCleaner_Protector(void)
 {
     while (1)
     {
-        if (distance <= Prot_Distance)
-        {
-            Protec_flag = 1;
-            StepMotor_Run(OFF);
-        }
         osDelay(10);
     }
 }
 
 static void LitterCleaner_Sensor(void)
 {
-    // 已铲猫屎
-    int Litter = 0;
-    int Shift = 0;
-    uint8_t str[64];
-    int cnt = 0; // 次数
-
     WS_Init();
-    Hcsr04_Init();
-    app_msg_t *app_msg;
+    
     while (1)
     {
-        // 读取数据
-        distance = GetDistance();
-        pressure = (float)(WS_Read() - pressure_init / ReWeighTimes) / 4294.967296f * 100;
-        if (pressure < 0)
-            pressure -= pressure;
-
-        printf("SENSOR:Pressure:%.2f Distance:%.2f\r\n", pressure, distance);
-
-        // 上传至缓冲区
-        if (app_msg != NULL)
-        {
-            app_msg->msg_type = en_msg_report;
-            app_msg->msg.report.LeftoverCatLitter = (float); // 剩余猫砂
-            app_msg->msg.report.Cleaner = (int);             // 铲屎信号（1铲   0不铲）
-            app_msg->msg.report.LeftoverCatLitter = (float); // 铲掉的排泄物
-            if (osMessageQueuePut(g_app_cb.app_msg, &app_msg, 0U, CONFIG_QUEUE_TIMEOUT != 0))
-            {
-                free(app_msg);
-            }
-        }
-        // 界面显示数据
-
-        // 判断状态（停机/运行中）
-        if (1)
-        {
-            OLED_ShowChinese(42, 0, 2, 12, 1);
-            OLED_ShowChinese(56, 0, 3, 12, 1);
-            OLED_ShowChinese(70, 0, 22, 12, 1);
-        }
-        else
-        {
-            OLED_ShowChinese(42, 0, 4, 12, 1);
-            OLED_ShowChinese(56, 0, 5, 12, 1);
-            OLED_ShowChinese(70, 0, 6, 12, 1);
-        }
-
-        sprintf((char *)str, "%dkg", Shift);
-        OLED_ShowString(70, 14, str, 12, 1);
-
-        // 剩余猫砂
-        sprintf((char *)str, "%dkg", pressure_litter);
-        OLED_ShowString(70, 28, str, 12, 1);
-
-        // 今日铲屎次数
-        sprintf((char *)str, "%d", cnt);
-        OLED_ShowString(98, 42, str, 12, 1);
-
-        // 数据处理
-        if (!Protec_flag)
-        {
-            if (pressure > LitterPressure && distance > Prot_Distance)
-            {
-                // 初始化限位开关
-                StepMotor_KeyID = osTimerNew(StepMotor_LimitedKey, osTimerPeriodic, NULL, NULL);
-                osTimerStart(StepMotor_KeyID, 1);
-
-                // 电机正转
-                StepMotor_Run(FOR);
-
-                // 记录数据
-                Shift += pressure;
-                pressure_litter -= pressure;
-                Litter = (int)pressure_litter;
-                cnt++;
-            }
-        }
-
         osDelay(10);
     }
 }
 
 static void LitterCleaner_Connector(void)
 {
-
-    CloudInit();
-    app_msg_t *app_msg;
     while (1)
     {
-        app_msg = NULL;
-        (void)osMessageQueueGet(g_app_cb.app_msg, (void **)&app_msg, NULL, 0xFFFFFFFF);
-        if (app_msg != NULL)
-        {
-            switch (app_msg->msg_type)
-            {
-            case en_msg_cmd:
-                deal_cmd_msg(&app_msg->msg.cmd);
-                break;
-            case en_msg_report:
-                deal_report_msg(&app_msg->msg.report);
-                break;
-            default:
-                break;
-            }
-            free(app_msg);
-        }
         osDelay(100);
     }
 }

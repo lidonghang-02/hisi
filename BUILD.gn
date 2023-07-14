@@ -8,8 +8,7 @@ static_library("IntelligentCatLitterCleaner") {
         "./Weight_Sensor/Weight_Sensor.c",
         "./wifi_config/ap_mode.c",
         "./wifi_config/sta_mode.c",
-        "./HCSR04/HCSR04.c",
-        
+        "./HCSR04/src/HCSR04.c",
     ]
 
     include_dirs = [
@@ -33,8 +32,16 @@ static_library("IntelligentCatLitterCleaner") {
 
         "./iot_cloud_oc/include",
         "./oled/include",
-  ]
-  deps = [
+        "./HCSR04/include",
+
+        "//vendor/bearpi/bearpi_hm_nano/common/third_party/iot_link/oc_mqtt/oc_mqtt_profile_v5",
+        "//third_party/cJSON",
+        "//vendor/bearpi/bearpi_hm_nano/common/third_party/iot_link/oc_mqtt/oc_mqtt_al",
+        "//vendor/bearpi/bearpi_hm_nano/common/third_party/iot_link/inc",
+    ]
+  
+  deps = ["./iot_cloud_oc:config"]
+  deps += [
         "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals:bearpi_iot_hardware_hals",
         "./EasyWifi:easy_wifi",
         "./iot_cloud_oc:cloud_oc",

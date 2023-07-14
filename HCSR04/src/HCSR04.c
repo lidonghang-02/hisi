@@ -8,7 +8,7 @@
 #include "hi_time.h"
 #include "iot_watchdog.h"
 #include "hi_io.h"
-#include "HCSR04.h"
+#include "../include/HCSR04.h"
 
 void Hcsr04_Init(void)
 {

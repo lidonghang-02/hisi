@@ -1,11 +1,11 @@
 #include <stdio.h>
 
 #include "Sensor.h"
-#include "HCSR04.h"
+
 // 电机状态
-void MotorStatusSet(MotorStatus status)
+void Begin_Clean(Clean status)
 {
-    if (status == FOR)
+    if (status == CLEAN)
     {
         printf("MotorStatusSet FOR\r\n");
     }
@@ -13,10 +13,5 @@ void MotorStatusSet(MotorStatus status)
     if (status == OFF)
     {
         printf("MotorStatusSet OFF\r\n");
-    }
-
-    if (status == REW)
-    {
-        printf("MotorStatusSet REW\r\n");
     }
 }

@@ -18,7 +18,10 @@
 #define SENSOR_TASK_PRIO 25
 #define TASK_DELAY 3
 
-osMessageQueueId_t mid_MsgQueue; // message queue id
+#include "cJSON.h"
+#include "oc_mqtt_profile.h"
+#include "cmsis_os2.h"
+
 typedef enum
 {
     en_msg_cmd = 0,
@@ -35,10 +38,10 @@ typedef struct
 
 typedef struct
 {
-    int pressure;
-    int distance;
-
-} report_t;
+    float LeftoverCatLitter; // 剩余猫砂
+    int Cleaner;             // 铲屎信号
+    float CatLitters;        // 铲掉的排泄物
+} SensorData, report_t;
 
 typedef struct
 {
