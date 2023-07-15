@@ -7,9 +7,8 @@
 #include <dtls_al.h>
 #include <oc_mqtt_al.h>
 #include <mqtt_al.h>
-#include "Sensor.h"
-#include "wifi_connect.h"
 #include "iot_cloud.h"
+#include "../../LitterCleaner.h"
 
 // 拼装数据上传
 static void deal_report_msg(report_t *report)
@@ -37,7 +36,7 @@ static void deal_report_msg(report_t *report)
     Cleaner.key = "Cleaner";
     Cleaner.value = &report->Cleaner;
     Cleaner.type = EN_OC_MQTT_PROFILE_VALUE_INT;
-    Cleaner.nxt = &motor;
+    Cleaner.nxt = &CatLitters;
 
     CatLitters.key = "CatLitters";
     CatLitters.value = &report->CatLitters;
@@ -124,13 +123,19 @@ static void deal_motor_cmd(cmd_t *cmd, cJSON *obj_root)
     if (strcmp(cJSON_GetStringValue(obj_para), "CLEAN") == 0)
     {
         g_app_cb.motor = 1;
-        MotorStatusSet(CLEAN);
+        StepMotor_Run(FOR);
+        StepMotor_Status = FOR;
+        Operation_Sign = 1;
+        osDelay(100);
+        IoTGpioRegisterIsrFunc(5, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_2, NULL);
+        IoTGpioRegisterIsrFunc(6, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_1, NULL);
         printf("Start Clean!\r\n");
     }
     else
     {
         g_app_cb.motor = 0;
-        MotorStatusSet(OFF);
+        StepMotor_Run(OFF);
+        Operation_Sign = 0;
         printf("Motor Off!\r\n");
     }
     cmdret = 0;
@@ -169,7 +174,6 @@ void CloudInit(void)
     app_msg_t *app_msg;
     uint32_t ret;
 
-    WifiConnect(CONFIG_WIFI_SSID, CONFIG_WIFI_PWD);
     dtls_al_init();
     mqtt_al_init();
     oc_mqtt_init();
