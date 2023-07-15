@@ -11,7 +11,6 @@
 
 #include "wifi_config/ap_mode.h"
 #include "wifi_config/sta_mode.h"
-#include "EasyWifi/wifi_connecter.h"
 
 #include "Weight_Sensor/Weight_Sensor.h"
 #include "StepMotor/StepMotor.h"
@@ -19,10 +18,12 @@
 #include "HCSR04.h"
 #include "iot_cloud.h"
 
+// 按键检测相关设置
 #define KEYLONGTIME 150
-#define KEYCLICKTIME 10
+#define KEYCLICKTIME 15
 #define Key_MaxClick 3
 
+// wifi的nv地址
 #define WIFI_NVID 0x0B
 
 // 保护距离
@@ -46,6 +47,7 @@ typedef struct
     hi_u8 passwd[65];
 } Wifi_InitInfo;
 
+// 按键状态
 struct LitterCleaner_Key
 {
     KeyStatus key_status;
@@ -56,8 +58,8 @@ struct LitterCleaner_Key
 // 按键状态机的软件定时器
 osTimerId_t KeyTimer_ID = 0;
 
-// 限位开关定时器
-osTimerId_t StepMotor_KeyID = 0, LimitedKey_ID = 0;
+// 按键定时器
+osTimerId_t StepMotor_KeyID = 0;
 // 防夹猫标志位
 uint8_t Protec_flag = 0;
 // 电机运转标识
@@ -65,12 +67,11 @@ MotorStatus StepMotor_Status = OFF;
 // 铲屎信号
 char Operation_Sign = 0;
 
-float distance = 0;        // 距离
-float pressure = 0;        // 变化重量
-float pressure_litter = 0; // 猫砂重量
-float pressure_shift = 0;
-unsigned long pressure_init = 0; // 初始化重量（猫砂重量的过渡变量）
-
+float distance = 0;              // 距离
+float pressure = 0;              // 变化重量
+float pressure_litter = 0;       // 猫砂重量
+float pressure_shift = 0;        // 铲屎重量
+unsigned long pressure_init = 0; // 初始化重量
 
 /**
  * @brief 按键外部中断回调函数
@@ -190,9 +191,8 @@ static void LitterCleaner_KeyInit(void)
  */
 static char LitterCleaner_WifiInit(void)
 {
-    WifiDeviceConfig Wifi_Config = {0};
     Wifi_InitInfo wifi = {0};
-    hi_u32 ret = 0;
+    char ret = 0;
 
     printf("Ready to connect to wifi...\n");
 
@@ -203,19 +203,12 @@ static char LitterCleaner_WifiInit(void)
     //     return -1;
 
     // test init
-    strcpy_s(wifi.ssid, WIFI_MAX_SSID_LEN, "MSI");
-    strcpy_s(wifi.passwd, WIFI_MAX_KEY_LEN, "128215781");
+    strcpy_s(wifi.ssid, HI_WIFI_MAX_SSID_LEN, "MSI");
+    strcpy_s(wifi.passwd, HI_WIFI_MAX_KEY_LEN, "128215781");
 
-    printf("ssid: %s , passwd: %s \n", wifi.ssid, wifi.passwd);
+    start_sta_connect(&wifi.ssid, HI_WIFI_MAX_SSID_LEN, &wifi.passwd, HI_WIFI_MAX_KEY_LEN);
 
-    strcpy_s(Wifi_Config.ssid, WIFI_MAX_SSID_LEN, wifi.ssid);
-    strcpy_s(Wifi_Config.preSharedKey, WIFI_MAX_KEY_LEN, wifi.passwd);
-    Wifi_Config.securityType = WIFI_SEC_TYPE_PSK;
-
-    printf("Finish setting wifi_config\n");
-
-    int Wifi_netID = ConnectToHotspot(&Wifi_Config);
-    if (Wifi_netID)
+    if (ret == 0)
     {
         printf("[Wifi] Connection is sucessful!\n");
         return 0;
@@ -284,36 +277,23 @@ static void LitterCleaner_Key(void)
             else // 单击
             {
                 printf("Key Down\n");
+
+                SteeringEngine_SetAngle(90);
+                osDelay(500);
+                SteeringEngine_SetAngle(0);
             }
         }
 
-        // hi_watchdog_feed();
-        osDelay(10);
-    }
-}
-
-static void LitterCleaner_Protector(void)
-{
-    while (1)
-    {
-        if (distance <= Prot_Distance)
-        {
-            Protec_flag = 1;
-            StepMotor_Run(OFF);
-            Operation_Sign = 0;
-        }
-        hi_watchdog_feed();
         osDelay(10);
     }
 }
 
 static void LitterCleaner_Sensor(void)
 {
-    // 已铲猫屎
-    int Litter = 0;
-    int Shift = 0;
+    // 剩余猫砂， 已铲猫屎， 工作次数
+    static int Litter = 0, Shift = 0, cnt = 0;
+    static unsigned char count = 0;
     uint8_t str[64];
-    int cnt = 0; // 次数
 
     app_msg_t *app_msg;
     while (1)
@@ -340,8 +320,6 @@ static void LitterCleaner_Sensor(void)
             }
         }
         // 界面显示数据
-
-        // 判断状态（停机/运行中）
         if (1)
         {
             OLED_ShowChinese(42, 0, 2, 12, 1);
@@ -367,10 +345,23 @@ static void LitterCleaner_Sensor(void)
         OLED_ShowString(98, 42, str, 12, 1);
 
         // 数据处理
-        if (!Protec_flag)
+        if (distance <= Prot_Distance)
         {
-            if (pressure > LitterPressure && distance > Prot_Distance)
+            Protec_flag = 1;
+            StepMotor_Run(OFF);
+            Operation_Sign = 0;
+        }
+        else
+        {
+            // 消除误差
+            if (pressure > LitterPressure)
+                count++;
+            else
+                count = 0;
+
+            if (count >= 5)
             {
+                count = 0;
                 // 电机正转
                 StepMotor_Run(FOR);
                 StepMotor_Status = FOR;
@@ -386,16 +377,21 @@ static void LitterCleaner_Sensor(void)
                 Shift = (int)pressure_shift;
                 cnt++;
             }
-        }
-        else if (distance > Prot_Distance)
-        {
-            Operation_Sign = 1;
-            Protec_flag = 0;
-            StepMotor_Run(StepMotor_Status);
+
+            // 恢复工作状态
+            if (Protec_flag)
+            {
+                if (StepMotor_Status != OFF)
+                {
+                    Operation_Sign = 1;
+                    StepMotor_Run(StepMotor_Status);
+                }
+                Protec_flag = 0;
+            }
         }
 
         hi_watchdog_feed();
-        osDelay(10);
+        osDelay(20);
     }
 }
 
@@ -423,7 +419,6 @@ static void LitterCleaner_Connector(void)
             free(app_msg);
         }
 
-        hi_watchdog_feed();
         osDelay(100);
     }
 }
@@ -444,6 +439,14 @@ static void LitterCleaner_Init(void)
     StepMotor_Init();
     SteeringEngine_Init();
 
+    // 初始化数据
+    for (int i = 0; i < ReWeighTimes; i++)
+    {
+        pressure_init += WS_Read();
+        osDelay(10);
+    }
+    pressure_litter = (float)pressure_init / 4294.967296f / ReWeighTimes * 100;
+
     osThreadAttr_t attr;
 
     // 按键检测
@@ -460,20 +463,6 @@ static void LitterCleaner_Init(void)
     else
         printf("[LitterCleaner - Key] Succeed to creat Task!\n");
 
-    // 防夹猫
-    attr.name = "Protector";
-    attr.attr_bits = 0U;
-    attr.cb_mem = NULL;
-    attr.cb_size = 0U;
-    attr.stack_mem = NULL;
-    attr.stack_size = 8192;
-    attr.priority = osPriorityAboveNormal6;
-
-    if (osThreadNew((osThreadFunc_t)LitterCleaner_Key, NULL, &attr) == NULL)
-        printf("[LitterCleaner - Protector] Falied to create Task!\n");
-    else
-        printf("[LitterCleaner - Protector] Succeed to creat Task!\n");
-
     // 传感器
     attr.name = "Sensor";
     attr.attr_bits = 0U;
@@ -481,7 +470,7 @@ static void LitterCleaner_Init(void)
     attr.cb_size = 0U;
     attr.stack_mem = NULL;
     attr.stack_size = 4096;
-    attr.priority = osPriorityAboveNormal;
+    attr.priority = osPriorityAboveNormal5;
 
     if (osThreadNew((osThreadFunc_t)LitterCleaner_Sensor, NULL, &attr) == NULL)
         printf("[LitterCleaner - Sensor] Falied to create Task!\n");
