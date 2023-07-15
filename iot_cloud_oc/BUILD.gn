@@ -20,7 +20,7 @@ copy("config") {
 static_library("cloud_oc") {
   sources = [
     # "src/Sensor.c",
-    # "src/wifi_connect.c",
+    "src/wifi_connect.c",
     # "../HCSR04/src/HCSR04.c",
     "src/iot_cloud.c",
   ]

@@ -11,7 +11,7 @@
 #include "../../LitterCleaner.h"
 
 // 拼装数据上传
-static void deal_report_msg(report_t *report)
+void deal_report_msg(report_t *report)
 {
     oc_mqtt_profile_service_t service;
     oc_mqtt_profile_kv_t LeftoverCatLitter;
@@ -103,13 +103,13 @@ static void oc_cmdresp(cmd_t *cmd, int cmdret)
 
 ///< COMMAND DEAL
 #include <cJSON.h>
-static void deal_motor_cmd(cmd_t *cmd, cJSON *obj_root)
+void deal_motor_cmd(cmd_t *cmd, cJSON *obj_root)
 {
     cJSON *obj_paras;
     cJSON *obj_para;
     int cmdret;
 
-    obj_paras = cJSON_GetObjectItem(obj_root, "Paras");
+    obj_paras = cJSON_GetObjectItem(obj_root, "paras");
     if (obj_paras == NULL)
     {
         cJSON_Delete(obj_root);
@@ -123,12 +123,16 @@ static void deal_motor_cmd(cmd_t *cmd, cJSON *obj_root)
     if (strcmp(cJSON_GetStringValue(obj_para), "CLEAN") == 0)
     {
         g_app_cb.motor = 1;
-        StepMotor_Run(FOR);
-        StepMotor_Status = FOR;
-        Operation_Sign = 1;
-        osDelay(100);
-        IoTGpioRegisterIsrFunc(5, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_2, NULL);
-        IoTGpioRegisterIsrFunc(6, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_1, NULL);
+        if (StepMotor_Status == OFF)
+        {
+            StepMotor_Run(FOR);
+            StepMotor_Status = FOR;
+            Operation_Sign = 1;
+            osDelay(100);
+            IoTGpioRegisterIsrFunc(13, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_2, NULL);
+            IoTGpioRegisterIsrFunc(14, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_1, NULL);
+        }
+
         printf("Start Clean!\r\n");
     }
     else
@@ -145,7 +149,7 @@ static void deal_motor_cmd(cmd_t *cmd, cJSON *obj_root)
     return;
 }
 
-static void deal_cmd_msg(cmd_t *cmd)
+void deal_cmd_msg(cmd_t *cmd)
 {
     cJSON *obj_root;
     cJSON *obj_cmdname;
@@ -161,7 +165,7 @@ static void deal_cmd_msg(cmd_t *cmd)
     {
         cJSON_Delete(obj_root);
     }
-    if (strcmp(cJSON_GetStringValue(obj_cmdname), "Change_Motor_Status") == 0)
+    if (strcmp(cJSON_GetStringValue(obj_cmdname), "Begin_Clean") == 0)
     {
         deal_motor_cmd(cmd, obj_root);
     }
@@ -174,10 +178,7 @@ void CloudInit(void)
     app_msg_t *app_msg;
     uint32_t ret;
 
-<<<<<<< HEAD
-=======
     // WifiConnect(CONFIG_WIFI_SSID, CONFIG_WIFI_PWD);
->>>>>>> 9368a5d7f757fe8c23f43a19114d4c7a09117a7e
     dtls_al_init();
     mqtt_al_init();
     oc_mqtt_init();

@@ -15,11 +15,11 @@ void Hcsr04_Init(void)
 {
     printf("HCSR04 init\r\n");
     IoTGpioInit(Trig);
-    IoTGpioSetFunc(Trig, IOT_GPIO_FUNC_GPIO_8_GPIO);
+    IoTGpioSetFunc(Trig, IOT_GPIO_FUNC_GPIO_7_GPIO);
     IoTGpioSetDir(Trig, IOT_GPIO_DIR_OUT);
 
     IoTGpioInit(Echo);
-    IoTGpioSetFunc(Echo, IOT_GPIO_FUNC_GPIO_7_GPIO);
+    IoTGpioSetFunc(Echo, IOT_GPIO_FUNC_GPIO_8_GPIO);
     IoTGpioSetDir(Echo, IOT_GPIO_DIR_IN);
 }
 
@@ -29,9 +29,8 @@ float GetDistance(void)
     EasyIsr_DisableAll();
     static unsigned long start_time = 0, time = 0;
     float dis = 0.0;
-    unsigned int flag = 0, stop = 500;
+    unsigned int flag = 0, stop = 40000;
     IotGpioValue value = IOT_GPIO_VALUE0;
-    return 0;
 
     IoTGpioSetOutputVal(Trig, IOT_GPIO_VALUE0);
     IoTGpioSetOutputVal(Trig, IOT_GPIO_VALUE1);

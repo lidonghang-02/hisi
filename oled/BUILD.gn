@@ -2,9 +2,10 @@ static_library("oled") {
   sources = [
     # "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals/src/hal_iot_gpio_ex.c",
     "src/oled.c",
+    # "test.c",
   ]
   include_dirs = [
-    "./",
+    "./include",
     "//utils/native/lite/include",
     "//kernel/liteos_m/kal/cmsis",
     "//base/iot_hardware/peripheral/interfaces/kits",

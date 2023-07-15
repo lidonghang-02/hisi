@@ -12,14 +12,14 @@
 #define Negative (-1)
 
 // 定义步进电机IO端口及其复用
-#define StepMotor_PinA  9
-#define StepMotor_PinB  12
-#define StepMotor_PinC  13
-#define StepMotor_PinD  14
-#define StepMotor_PinAFunc  IOT_GPIO_FUNC_GPIO_9_GPIO
-#define StepMotor_PinBFunc  IOT_GPIO_FUNC_GPIO_12_GPIO
-#define StepMotor_PinCFunc  IOT_GPIO_FUNC_GPIO_13_GPIO
-#define StepMotor_PinDFunc  IOT_GPIO_FUNC_GPIO_14_GPIO
+#define StepMotor_PinA  5
+#define StepMotor_PinB  6
+#define StepMotor_PinC  9
+#define StepMotor_PinD  11
+#define StepMotor_PinAFunc  IOT_GPIO_FUNC_GPIO_5_GPIO
+#define StepMotor_PinBFunc  IOT_GPIO_FUNC_GPIO_6_GPIO
+#define StepMotor_PinCFunc  IOT_GPIO_FUNC_GPIO_9_GPIO
+#define StepMotor_PinDFunc  IOT_GPIO_FUNC_GPIO_11_GPIO
 
 // 单独开启步进电机某相的信号
 #define StepMotorPinA_ON IoTGpioSetOutputVal(StepMotor_PinA, IOT_GPIO_VALUE0)
@@ -47,10 +47,19 @@ IoTGpioSetOutputVal(StepMotor_PinC, IOT_GPIO_VALUE1);   \
 IoTGpioSetOutputVal(StepMotor_PinD, IOT_GPIO_VALUE1);   \
 }while(0)
 
+#define StepMotorPin_ON do{    \
+IoTGpioSetOutputVal(StepMotor_PinA, IOT_GPIO_VALUE0);   \
+IoTGpioSetOutputVal(StepMotor_PinB, IOT_GPIO_VALUE0);   \
+IoTGpioSetOutputVal(StepMotor_PinC, IOT_GPIO_VALUE0);   \
+IoTGpioSetOutputVal(StepMotor_PinD, IOT_GPIO_VALUE0);   \
+}while(0)
+
 void StepMotor_Init(void);
 void StepMotor_SetStatus(uint8_t motor_status);
 void StepMotor_InitPin(uint8_t StepMotor_Pin, uint8_t StepMotor_PinFunc);
 void StepMotor_Test(void);
 void StepMotor_Run(MotorStatus status);
+void StepMotor_PinDeInit(void);
+void StepMotor_PinInit(void);
 
 #endif

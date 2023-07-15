@@ -1,6 +1,8 @@
 #ifndef __IOT_CLOUD_H__
 #define __IOT_CLOUD_H__
 
+#define CONFIG_WIFI_SSID "test"            // 修改为自己的WiFi 热点账号
+#define CONFIG_WIFI_PWD "5m49c66m"         // 修改为自己的WiFi 热点密码
 #define CONFIG_APP_SERVERIP "117.78.5.125" // 标准版
 #define CONFIG_APP_SERVERPORT "1883"
 #define CONFIG_APP_DEVICEID "64a40e71ae80ef457fc02cc0_20230705" // 替换为注册设备后生成的deviceid
@@ -60,16 +62,16 @@ typedef struct
 static app_cb_t g_app_cb;
 
 // 拼装数据上传
-static void deal_report_msg(report_t *report);
+void deal_report_msg(report_t *report);
 
 // 推送消息至缓冲区
 static int msg_rcv_callback(oc_mqtt_profile_msgrcv_t *msg);
 
 static void oc_cmdresp(cmd_t *cmd, int cmdret);
 
-static void deal_motor_cmd(cmd_t *cmd, cJSON *obj_root);
+void deal_motor_cmd(cmd_t *cmd, cJSON *obj_root);
 
-static void deal_cmd_msg(cmd_t *cmd);
+void deal_cmd_msg(cmd_t *cmd);
 // 连接平台
 void CloudInit(void);
 

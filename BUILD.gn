@@ -28,7 +28,6 @@ static_library("IntelligentCatLitterCleaner") {
         "./StepMotor",
         "./Weight_Sensor",
         "./wifi_config",
-        "./EasyWifi",
 
         "./iot_cloud_oc/include",
         "./oled/include",
@@ -43,7 +42,6 @@ static_library("IntelligentCatLitterCleaner") {
   deps = ["./iot_cloud_oc:config"]
   deps += [
         "//vendor/bearpi/bearpi_hm_nano/common/iot_hardware_hals:bearpi_iot_hardware_hals",
-        "./EasyWifi:easy_wifi",
         "./iot_cloud_oc:cloud_oc",
         "./oled:oled",
   ]

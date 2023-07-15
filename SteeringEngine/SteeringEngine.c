@@ -1,8 +1,9 @@
 #include "SteeringEngine.h"
 #include "hi_time.h"
+#include "hi_isr.h"
 
 #define CYCLE   20000
-#define COUNT   20
+#define COUNT   50
 
 /**
  * @brief Initialize the Steering Engine, including its IO and Function and Directinon
@@ -40,6 +41,12 @@ void SteeringEngine_SetAngle(uint8_t angle)
 {
     uint16_t duty = angle * (2500 - 500) / 180 + 500;
     uint8_t i = 0;
+    hi_u32 isr = 0;
+
+    isr = hi_int_lock();
+
     for(i = 0; i < COUNT; i++)
         SteeringEngine_SetAngleOnce(duty);
+    
+    hi_int_restore(isr);
 }

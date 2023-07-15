@@ -3,6 +3,7 @@
 #include "EasyIsr.h"
 #include "cmsis_os2.h"
 #include <stdlib.h>
+#include "LitterCleaner.h"
 
 // #define Speed_Max
 
@@ -48,11 +49,7 @@ void StepMotor_CallbackFunc(void)
 // {
 // }
 
-/**
- * @brief 电机初始化，包括IO和定时器
- *
- */
-void StepMotor_Init(void)
+void StepMotor_PinInit(void)
 {
     // Gpio set high level
     StepMotorPin_OFF;
@@ -62,9 +59,26 @@ void StepMotor_Init(void)
     StepMotor_InitPin(StepMotor_PinB, StepMotor_PinBFunc);
     StepMotor_InitPin(StepMotor_PinC, StepMotor_PinCFunc);
     StepMotor_InitPin(StepMotor_PinD, StepMotor_PinDFunc);
+}
 
+void StepMotor_PinDeInit(void)
+{
+    StepMotorPin_ON;
+    IoTGpioDeinit(StepMotor_PinA);
+    IoTGpioDeinit(StepMotor_PinB);
+    IoTGpioDeinit(StepMotor_PinC);
+    IoTGpioDeinit(StepMotor_PinD);
+    
+}
+
+/**
+ * @brief 电机初始化，包括IO和定时器
+ *
+ */
+void StepMotor_Init(void)
+{
     // initialize hardware timer to control the operation of step motor
-    StepMotor_Timer.DEVICE = TIMER1;
+    StepMotor_Timer.DEVICE = TIMER2;
     StepMotor_Timer.ITMASK = ITMASK_DISABLE;
     StepMotor_Timer.LOAD = EasyTimer_GetClockFreq();
     StepMotor_Timer.MODE = MODE_CYCLE;
@@ -79,7 +93,7 @@ void StepMotor_Init(void)
     // initialize the interrupt of hardware timer
     StepMotor_Isr.CALLBACKFUNC = StepMotor_CallbackFunc;
     StepMotor_Isr.CALLBACKPARA = NULL;
-    StepMotor_Isr.DEVICE = TIMER_1_IRQ;
+    StepMotor_Isr.DEVICE = TIMER_2_IRQ;
     StepMotor_Isr.PRIORITY = 7;
 
     ack = EasyIsr_Init(&StepMotor_Isr);
@@ -155,6 +169,8 @@ void StepMotor_Run(MotorStatus status)
     switch (status)
     {
     case FOR:
+        osTimerStop(KeyTimer_ID);
+        StepMotor_PinInit();
         StepMotor_SetSpeed(40000, Positive);
         EasyTimer_Start(&StepMotor_Timer);
         EasyIsr_Start(&StepMotor_Isr);
@@ -167,8 +183,12 @@ void StepMotor_Run(MotorStatus status)
         printf("Motor Run Negative\n");
         break;
     case OFF:
+        StepMotor_PinDeInit();
         EasyIsr_Stop(&StepMotor_Isr);
         EasyTimer_Stop(&StepMotor_Timer);
+        Key_PinInit();
+        osTimerStart(KeyTimer_ID, 1);
+        printf("OFF\n");
         break;
     default:
         break;
