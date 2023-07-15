@@ -174,6 +174,10 @@ void CloudInit(void)
     app_msg_t *app_msg;
     uint32_t ret;
 
+<<<<<<< HEAD
+=======
+    // WifiConnect(CONFIG_WIFI_SSID, CONFIG_WIFI_PWD);
+>>>>>>> 9368a5d7f757fe8c23f43a19114d4c7a09117a7e
     dtls_al_init();
     mqtt_al_init();
     oc_mqtt_init();
