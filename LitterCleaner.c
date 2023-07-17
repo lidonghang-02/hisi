@@ -67,7 +67,8 @@ uint8_t Protec_flag = 0;
 // 电机运转标识
 MotorStatus StepMotor_Status = OFF;
 // 铲屎信号
-char Operation_Sign = 0;
+int Operation_Sign = 0;
+
 
 float distance = 0;                   // 距离
 unsigned long long pressure = 0;      // 变化重量
@@ -149,6 +150,7 @@ void LimitedKey_1(void)
 void LimitedKey_2(void)
 {
     printf("Key2 Down\n");
+    StepMotor_Run(OFF);
     IoTGpioUnregisterIsrFunc(13);
     Operation_Sign = 0;
     StepMotor_Status = OFF;
@@ -324,16 +326,19 @@ static void LitterCleaner_Sensor(void)
             printf("Distance: %.2f\r\n", distance);
 
         // 上传至缓冲区
-        // printf("read to send messages\n");
         app_msg = malloc(sizeof(app_msg_t));
         if (app_msg != NULL)
         {
+            // printf("read to send messages\n");
+            printf("litter:%f\n", pressure_litter);
+            printf("shift: %f\n", pressure_shift);
             app_msg->msg_type = en_msg_report;
             app_msg->msg.report.LeftoverCatLitter = (float)pressure_litter; // 剩余猫砂
             app_msg->msg.report.Cleaner = (int)Operation_Sign;              // 铲屎信号（1铲   0不铲）
             app_msg->msg.report.CatLitters = (float)pressure_shift;         // 铲掉的排泄物
-            if (osMessageQueuePut(g_app_cb.app_msg, &app_msg, 0U, CONFIG_QUEUE_TIMEOUT != 0))
+            if (osMessageQueuePut(g_app_cb.app_msg, &app_msg, 0U, CONFIG_QUEUE_TIMEOUT) == osOK)
             {
+                printf("send out messages, id: %d\n", (int)g_app_cb.app_msg);
                 free(app_msg);
             }
         }
@@ -375,12 +380,12 @@ static void LitterCleaner_Sensor(void)
         else
         {
             // 消除误差
-            if (pressure_delta > LitterPressure)
+            if (pressure_delta - pressure_shift > LitterPressure)
                 count++;
             else
                 count = 0;
 
-            if (count >= 10)
+            if (count >= 5)
             {
                 count = 0;
                 // 电机正转
@@ -392,8 +397,8 @@ static void LitterCleaner_Sensor(void)
                 IoTGpioRegisterIsrFunc(13, IOT_INT_TYPE_EDGE, IOT_GPIO_EDGE_FALL_LEVEL_LOW, (GpioIsrCallbackFunc)LimitedKey_1, NULL);
 
                 // 记录数据
-                pressure_shift += pressure;
-                pressure_litter -= pressure;
+                pressure_shift += pressure_delta;
+                pressure_litter -= pressure_delta;
                 Litter = (int)pressure_litter;
                 Shift = (int)pressure_shift;
                 cnt++;
@@ -424,6 +429,7 @@ static void LitterCleaner_Connector(void)
     {
         app_msg = NULL;
         (void)osMessageQueueGet(g_app_cb.app_msg, (void **)&app_msg, NULL, 0xFFFFFFFF);
+        printf("connect, id: %d\n", (int)g_app_cb.app_msg);
         if (app_msg != NULL)
         {
             switch (app_msg->msg_type)
@@ -488,20 +494,6 @@ static void LitterCleaner_Init(void)
     else
         printf("[LitterCleaner - Key] Succeed to creat Task!\n");
 
-    // 传感器
-    attr.name = "Sensor";
-    attr.attr_bits = 0U;
-    attr.cb_mem = NULL;
-    attr.cb_size = 0U;
-    attr.stack_mem = NULL;
-    attr.stack_size = 4096;
-    attr.priority = osPriorityAboveNormal3;
-
-    if (osThreadNew((osThreadFunc_t)LitterCleaner_Sensor, NULL, &attr) == NULL)
-        printf("[LitterCleaner - Sensor] Falied to create Task!\n");
-    else
-        printf("[LitterCleaner - Sensor] Succeed to creat Task!\n");
-
     // 数据发送与接收
     attr.name = "Connector";
     attr.attr_bits = 0U;
@@ -515,6 +507,20 @@ static void LitterCleaner_Init(void)
         printf("[LitterCleaner - Connector] Falied to create Task!\n");
     else
         printf("[LitterCleaner - Connector] Succeed to creat Task!\n");
+
+    // 传感器
+    attr.name = "Sensor";
+    attr.attr_bits = 0U;
+    attr.cb_mem = NULL;
+    attr.cb_size = 0U;
+    attr.stack_mem = NULL;
+    attr.stack_size = 4096;
+    attr.priority = osPriorityAboveNormal3;
+
+    if (osThreadNew((osThreadFunc_t)LitterCleaner_Sensor, NULL, &attr) == NULL)
+        printf("[LitterCleaner - Sensor] Falied to create Task!\n");
+    else
+        printf("[LitterCleaner - Sensor] Succeed to creat Task!\n");
 
     osThreadExit();
 }

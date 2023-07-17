@@ -10,6 +10,7 @@
 #include "iot_cloud.h"
 #include "../../LitterCleaner.h"
 
+app_cb_t g_app_cb;
 // 拼装数据上传
 void deal_report_msg(report_t *report)
 {
@@ -184,6 +185,7 @@ void CloudInit(void)
     oc_mqtt_init();
 
     g_app_cb.app_msg = osMessageQueueNew(MSGQUEUE_COUNT, MSGQUEUE_SIZE, NULL);
+    printf("init, id: %d\n", (int)g_app_cb.app_msg);
     if (g_app_cb.app_msg == NULL)
     {
         printf("Create receive msg queue failed");

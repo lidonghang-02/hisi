@@ -59,7 +59,7 @@ typedef struct
     int connected;
     int motor;
 } app_cb_t;
-static app_cb_t g_app_cb;
+extern app_cb_t g_app_cb;
 
 // 拼装数据上传
 void deal_report_msg(report_t *report);
