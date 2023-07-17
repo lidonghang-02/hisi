@@ -267,7 +267,13 @@ static void LitterCleaner_Key(void)
             else if (i == 3) // 三击
             {
                 printf("Key Click 3\n");
-            }
+                if (!Protec_flag)
+                {
+                    SteeringEngine_SetAngle(90);
+                    osDelay(500);
+                    SteeringEngine_SetAngle(0);
+                }
+            
             else if (i == 2) // 双击
             {
                 printf("Key Double\n");
@@ -281,12 +287,6 @@ static void LitterCleaner_Key(void)
             else // 单击
             {
                 printf("Key Down\n");
-                if (!Protec_flag)
-                {
-                    SteeringEngine_SetAngle(90);
-                    osDelay(500);
-                    SteeringEngine_SetAngle(0);
-                }
             }
         }
 
