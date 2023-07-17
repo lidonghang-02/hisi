@@ -206,15 +206,15 @@ static char LitterCleaner_WifiInit(void)
 
     printf("Ready to connect to wifi...\n");
 
-    // ret = hi_factory_nv_read(WIFI_NVID, &wifi, sizeof(Wifi_InitInfo), 0);
-    // if (ret == HISI_OK)
-    //     printf("Succeed getting the wifi info\n");
-    // else
-    //     return -1;
+    ret = hi_factory_nv_read(WIFI_NVID, &wifi, sizeof(Wifi_InitInfo), 0);
+    if (ret == HISI_OK)
+        printf("Succeed getting the wifi info\n");
+    else
+        return -1;
 
     // test init
-    strcpy_s(wifi.ssid, HI_WIFI_MAX_SSID_LEN, "MSI");
-    strcpy_s(wifi.passwd, HI_WIFI_MAX_KEY_LEN, "128215781");
+    // strcpy_s(wifi.ssid, HI_WIFI_MAX_SSID_LEN, "MSI");
+    // strcpy_s(wifi.passwd, HI_WIFI_MAX_KEY_LEN, "128215781");
 
     WifiConnect(&wifi.ssid, &wifi.passwd);
 
@@ -487,7 +487,7 @@ static void LitterCleaner_Init(void)
     attr.cb_size = 0U;
     attr.stack_mem = NULL;
     attr.stack_size = 8192;
-    attr.priority = osPriorityAboveNormal5;
+    attr.priority = osPriorityAboveNormal2;
 
     if (osThreadNew((osThreadFunc_t)LitterCleaner_Key, NULL, &attr) == NULL)
         printf("[LitterCleaner - Key] Falied to create Task!\n");
