@@ -29,7 +29,7 @@
 #define WIFI_NVID 0x0B
 
 // 保护距离
-#define Prot_Distance 10
+#define Prot_Distance 20
 
 // 重复测量次数
 #define ReWeighTimes 5
@@ -68,7 +68,6 @@ uint8_t Protec_flag = 0;
 MotorStatus StepMotor_Status = OFF;
 // 铲屎信号
 int Operation_Sign = 0;
-
 
 float distance = 0;                   // 距离
 unsigned long long pressure = 0;      // 变化重量
@@ -273,24 +272,25 @@ static void LitterCleaner_Key(void)
                     osDelay(500);
                     SteeringEngine_SetAngle(0);
                 }
-            
-            else if (i == 2) // 双击
-            {
-                printf("Key Double\n");
-                pressure_init = 0;
-                for (int i = 0; i < ReWeighTimes; i++)
+
+                else if (i == 2) // 双击
                 {
-                    pressure_init += WS_Read();
-                    osDelay(10);
+                    printf("Key Double\n");
+                    pressure_init = 0;
+                    for (int i = 0; i < ReWeighTimes; i++)
+                    {
+                        pressure_init += WS_Read();
+                        osDelay(10);
+                    }
+                }
+                else // 单击
+                {
+                    printf("Key Down\n");
                 }
             }
-            else // 单击
-            {
-                printf("Key Down\n");
-            }
-        }
 
-        osDelay(10);
+            osDelay(10);
+        }
     }
 }
 
@@ -465,10 +465,6 @@ static void LitterCleaner_Init(void)
     StepMotor_Init();
     SteeringEngine_Init();
     LitterCleaner_KeyInit();
-
-    // SteeringEngine_SetAngle(90);
-    // osDelay(500);
-    // SteeringEngine_SetAngle(0);
 
     // 初始化数据
     for (int i = 0; i < ReWeighTimes; i++)
